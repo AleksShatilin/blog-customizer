@@ -18,36 +18,21 @@ import {
   contentWidthArr
 } from '../../constants/articleProps';
 
-// Интерфейс пропсов компонента формы
-interface ArticleParamsFormProps {
-  isOpen: boolean;
-  onToggle: () => void;
-  currentValues: ArticleStateType;
-  onApply: (values: ArticleStateType) => void;
-}
-
 /**
  * Форма настройки параметров оформления статьи
- * Предоставляет интерфейс для выбора шрифта, размеров, цветов и других стилей
- * Реализует логику открытия/закрытия и применения изменений
  */
-export const ArticleParamsForm: FC<ArticleParamsFormProps> = ({
-  isOpen,
-  onToggle,
-  currentValues,
-  onApply
-}) => {
-  // Локальное состояние формы (отдельно от глобального состояния)
-  const [localSettings, setLocalSettings] = useState<ArticleStateType>(currentValues);
-  
-  // Референс для отслеживания кликов вне области формы
+export const ArticleParamsForm: FC = () => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [localSettings, setLocalSettings] = useState<ArticleStateType>(defaultArticleState);
   const formContainerRef = useRef<HTMLElement | null>(null);
 
-  // Эффект для обработки кликов вне открытой панели
+  // Эффект для кликов вне формы
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleExternalClick = (event: MouseEvent): void => {
-      if (isOpen && !formContainerRef.current?.contains(event.target as Node)) {
-        onToggle();
+      if (!formContainerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
       }
     };
 
@@ -56,27 +41,37 @@ export const ArticleParamsForm: FC<ArticleParamsFormProps> = ({
     return () => {
       document.removeEventListener('mousedown', handleExternalClick);
     };
-  }, [isOpen, onToggle]);
+  }, [isOpen]);
 
   /**
-   * Обработчик отправки формы (применение настроек)
+   * Применяет стили к элементу main
    */
+  const applyStylesToMainElement = (settings: ArticleStateType): void => {
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      Object.entries({
+        '--font-family': settings.fontFamilyOption.value,
+        '--font-size': settings.fontSizeOption.value,
+        '--font-color': settings.fontColor.value,
+        '--container-width': settings.contentWidth.value,
+        '--bg-color': settings.backgroundColor.value,
+      }).forEach(([key, value]) => {
+        mainElement.style.setProperty(key, value);
+      });
+    }
+  };
+
   const handleFormSubmit = (event: React.FormEvent): void => {
     event.preventDefault();
-    onApply(localSettings);
+    applyStylesToMainElement(localSettings);
+    setIsOpen(false);
   };
 
-  /**
-   * Обработчик сброса настроек к значениям по умолчанию
-   */
   const handleSettingsReset = (): void => {
     setLocalSettings({ ...defaultArticleState });
-    onApply(defaultArticleState);
+    applyStylesToMainElement(defaultArticleState);
   };
 
-  /**
-   * Универсальный обработчик изменения полей формы
-   */
   const updateFormField = (fieldName: keyof ArticleStateType, newValue: OptionType): void => {
     setLocalSettings(prev => ({
       ...prev,
@@ -84,15 +79,17 @@ export const ArticleParamsForm: FC<ArticleParamsFormProps> = ({
     }));
   };
 
+  const handleToggle = (): void => {
+    setIsOpen(prev => !prev);
+  };
+
   return (
     <>
-      {/* Кнопка управления видимостью панели */}
       <ArrowButton 
         isOpen={isOpen} 
-        onClick={onToggle} 
+        onClick={handleToggle} 
       />
       
-      {/* Основная панель с формой настроек */}
       <aside
         className={clsx(styles.container, {
           [styles.container_open]: isOpen,
@@ -115,7 +112,6 @@ export const ArticleParamsForm: FC<ArticleParamsFormProps> = ({
             Параметры оформления
           </Text>
           
-          {/* Поле выбора шрифта */}
           <Select
             selected={localSettings.fontFamilyOption}
             onChange={(value: OptionType) => 
@@ -126,7 +122,6 @@ export const ArticleParamsForm: FC<ArticleParamsFormProps> = ({
             title="Стиль шрифта"
           />
           
-          {/* Группа выбора размера шрифта */}
           <RadioGroup
             selected={localSettings.fontSizeOption}
             name="textSize"
@@ -137,7 +132,6 @@ export const ArticleParamsForm: FC<ArticleParamsFormProps> = ({
             title="Размер шрифта"
           />
           
-          {/* Поле выбора цвета текста */}
           <Select
             selected={localSettings.fontColor}
             onChange={(value: OptionType) => 
@@ -150,7 +144,6 @@ export const ArticleParamsForm: FC<ArticleParamsFormProps> = ({
           
           <Separator />
           
-          {/* Поле выбора цвета фона */}
           <Select
             selected={localSettings.backgroundColor}
             onChange={(value: OptionType) => 
@@ -161,7 +154,6 @@ export const ArticleParamsForm: FC<ArticleParamsFormProps> = ({
             title="Цвет фона"
           />
           
-          {/* Поле выбора ширины контента */}
           <Select
             selected={localSettings.contentWidth}
             onChange={(value: OptionType) => 
@@ -172,7 +164,6 @@ export const ArticleParamsForm: FC<ArticleParamsFormProps> = ({
             title="Ширина области"
           />
           
-          {/* Панель с кнопками управления */}
           <div className={styles.bottomContainer}>
             <Button
               title="Вернуть по умолчанию"
