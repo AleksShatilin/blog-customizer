@@ -22,17 +22,17 @@ import {
  * Форма настройки параметров оформления статьи
  */
 export const ArticleParamsForm: FC = () => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [localSettings, setLocalSettings] = useState<ArticleStateType>(defaultArticleState);
   const formContainerRef = useRef<HTMLElement | null>(null);
 
   // Эффект для кликов вне формы
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isMenuOpen) return;
 
     const handleExternalClick = (event: MouseEvent): void => {
       if (!formContainerRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
+        setIsMenuOpen(false);
       }
     };
 
@@ -41,7 +41,7 @@ export const ArticleParamsForm: FC = () => {
     return () => {
       document.removeEventListener('mousedown', handleExternalClick);
     };
-  }, [isOpen]);
+  }, [isMenuOpen]);
 
   /**
    * Применяет стили к элементу main
@@ -64,7 +64,7 @@ export const ArticleParamsForm: FC = () => {
   const handleFormSubmit = (event: React.FormEvent): void => {
     event.preventDefault();
     applyStylesToMainElement(localSettings);
-    setIsOpen(false);
+    setIsMenuOpen(false);
   };
 
   const handleSettingsReset = (): void => {
@@ -80,19 +80,19 @@ export const ArticleParamsForm: FC = () => {
   };
 
   const handleToggle = (): void => {
-    setIsOpen(prev => !prev);
+    setIsMenuOpen(prev => !prev);
   };
 
   return (
     <>
       <ArrowButton 
-        isOpen={isOpen} 
+        isOpen={isMenuOpen} 
         onClick={handleToggle} 
       />
       
       <aside
         className={clsx(styles.container, {
-          [styles.container_open]: isOpen,
+          [styles.container_open]: isMenuOpen,
         })}
         ref={formContainerRef}
       >
